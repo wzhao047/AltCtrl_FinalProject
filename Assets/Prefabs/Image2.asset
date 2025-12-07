@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Image2
   m_EditorClassIdentifier: Assembly-CSharp::ImageCommandSO
   commandName: 
-  imageSprite: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  imageSprite: {fileID: 21300000, guid: 61e27947e6fdcd44f9f500f76f993b54, type: 3}
   requiredKeys: 640000006200000063000000

@@ -41,9 +41,10 @@ public class RecipeOrderController : MonoBehaviour
         {
             if (!_firstGearKeyCode.HasValue)
             {
-                _firstGearKeyCode = ParseKeyCode(firstGearKey);
+                KeyCode parsed = ParseKeyCode(firstGearKey);
+                _firstGearKeyCode = parsed;
             }
-            return _firstGearKeyCode.Value;
+            return _firstGearKeyCode ?? KeyCode.None;
         }
 
         /// <summary>
@@ -53,9 +54,10 @@ public class RecipeOrderController : MonoBehaviour
         {
             if (!_secondGearKeyCode.HasValue)
             {
-                _secondGearKeyCode = ParseKeyCode(secondGearKey);
+                KeyCode parsed = ParseKeyCode(secondGearKey);
+                _secondGearKeyCode = parsed;
             }
-            return _secondGearKeyCode.Value;
+            return _secondGearKeyCode ?? KeyCode.None;
         }
 
         /// <summary>

@@ -62,9 +62,6 @@ public class GearTypeController : MonoBehaviour
     [Tooltip("默认Recipe图片（当没有使用任何齿轮时显示）")]
     public Sprite defaultRecipeSprite;
 
-    // 当前正在使用的齿轮类型
-    private GearType currentActiveGear = null;
-
     // 跟踪每个齿轮的按键状态
     private Dictionary<GearType, bool> keyPressedStates = new Dictionary<GearType, bool>();
 
@@ -174,15 +171,8 @@ public class GearTypeController : MonoBehaviour
     {
         if (gearType == null) return;
 
-        // 如果之前有其他齿轮在使用，先放回去
-        if (currentActiveGear != null && currentActiveGear != gearType)
-        {
-            PutBackGear(currentActiveGear, false);
-        }
-
         // 设置当前齿轮为使用状态
         gearType.isInUse = true;
-        currentActiveGear = gearType;
 
         // 更新视觉和Recipe显示
         UpdateGearVisual(gearType);
@@ -202,12 +192,6 @@ public class GearTypeController : MonoBehaviour
         if (gearType == null) return;
 
         gearType.isInUse = false;
-
-        // 如果这是当前使用的齿轮，清除当前激活齿轮
-        if (currentActiveGear == gearType)
-        {
-            currentActiveGear = null;
-        }
 
         // 更新视觉和Recipe显示
         UpdateGearVisual(gearType);
@@ -258,45 +242,92 @@ public class GearTypeController : MonoBehaviour
 
     /// <summary>
     /// 更新Recipe显示
+    /// 显示所有在盒子外面的gear的recipe图片
     /// </summary>
     private void UpdateRecipeDisplay()
     {
-        if (recipeDisplayImage == null)
-            return;
+        // 获取所有在盒子外面的gear（isInUse == true）
+        List<GearType> gearsOutsideBox = new List<GearType>();
+        foreach (var gearType in gearTypes)
+        {
+            if (gearType != null && gearType.isInUse && gearType.recipeImage != null)
+            {
+                gearsOutsideBox.Add(gearType);
+            }
+        }
 
-        if (currentActiveGear != null && currentActiveGear.recipeImage != null)
+        // 显示所有在盒子外面的gear的recipe图片
+        foreach (var gearType in gearTypes)
         {
-            // 显示当前使用齿轮对应的Recipe图片
-            recipeDisplayImage.sprite = currentActiveGear.recipeImage.sprite;
-            recipeDisplayImage.gameObject.SetActive(true);
+            if (gearType != null && gearType.recipeImage != null)
+            {
+                // 如果gear在盒子外面，显示其recipe图片；否则隐藏
+                gearType.recipeImage.gameObject.SetActive(gearType.isInUse);
+            }
         }
-        else if (showDefaultWhenNoGear && defaultRecipeSprite != null)
+
+        // 如果使用单一的recipeDisplayImage，显示第一个在盒子外面的gear的recipe
+        // 或者如果没有gear在外面，显示默认图片
+        if (recipeDisplayImage != null)
         {
-            // 显示默认Recipe图片
-            recipeDisplayImage.sprite = defaultRecipeSprite;
-            recipeDisplayImage.gameObject.SetActive(true);
-        }
-        else if (currentActiveGear == null)
-        {
-            // 没有使用任何齿轮，隐藏Recipe
-            recipeDisplayImage.gameObject.SetActive(false);
+            if (gearsOutsideBox.Count > 0 && gearsOutsideBox[0].recipeImage != null)
+            {
+                // 显示第一个在盒子外面的gear的recipe图片
+                recipeDisplayImage.sprite = gearsOutsideBox[0].recipeImage.sprite;
+                recipeDisplayImage.gameObject.SetActive(true);
+            }
+            else if (showDefaultWhenNoGear && defaultRecipeSprite != null)
+            {
+                // 显示默认Recipe图片
+                recipeDisplayImage.sprite = defaultRecipeSprite;
+                recipeDisplayImage.gameObject.SetActive(true);
+            }
+            else
+            {
+                // 没有使用任何齿轮，隐藏Recipe
+                recipeDisplayImage.gameObject.SetActive(false);
+            }
         }
     }
 
     /// <summary>
-    /// 获取当前正在使用的齿轮型号
+    /// 获取所有正在使用的齿轮型号列表
+    /// </summary>
+    public List<GearType> GetActiveGears()
+    {
+        List<GearType> activeGears = new List<GearType>();
+        foreach (var gearType in gearTypes)
+        {
+            if (gearType != null && gearType.isInUse)
+            {
+                activeGears.Add(gearType);
+            }
+        }
+        return activeGears;
+    }
+
+    /// <summary>
+    /// 获取当前正在使用的齿轮型号（为了兼容性，返回第一个在盒子外面的gear）
     /// </summary>
     public GearType GetCurrentActiveGear()
     {
-        return currentActiveGear;
+        foreach (var gearType in gearTypes)
+        {
+            if (gearType != null && gearType.isInUse)
+            {
+                return gearType;
+            }
+        }
+        return null;
     }
 
     /// <summary>
-    /// 获取当前正在使用的齿轮名称
+    /// 获取当前正在使用的齿轮名称（为了兼容性，返回第一个在盒子外面的gear的名称）
     /// </summary>
     public string GetCurrentActiveGearName()
     {
-        return currentActiveGear != null ? currentActiveGear.gearTypeName : null;
+        var activeGear = GetCurrentActiveGear();
+        return activeGear != null ? activeGear.gearTypeName : null;
     }
 
     /// <summary>

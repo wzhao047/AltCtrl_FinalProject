@@ -62,6 +62,9 @@ public class GearTrackController : MonoBehaviour
             InitializeDefaultTracks();
         }
 
+        // 重置所有轨道的安装状态（确保游戏开始时所有轨道都是未安装状态）
+        ResetAllTracksState();
+
         // 初始化所有轨道的状态
         UpdateAllGearVisuals();
     }
@@ -326,6 +329,20 @@ public class GearTrackController : MonoBehaviour
             }
         }
         return count;
+    }
+
+    /// <summary>
+    /// 重置所有轨道的状态（不触发事件，用于初始化）
+    /// </summary>
+    private void ResetAllTracksState()
+    {
+        foreach (var track in gearTracks)
+        {
+            if (track != null)
+            {
+                track.isGearInstalled = false;
+            }
+        }
     }
 
     /// <summary>

@@ -33,11 +33,24 @@ public class GameManager : MonoBehaviour
     [Header("UI：鼠标进度条（0~1）")]
     public Slider mouseProgressSlider;
 
+    [Header("UI：胜利/失败面板")]
+    [Tooltip("胜利面板（GameObject）")]
+    public GameObject winPanel;
+    
+    [Tooltip("失败面板（GameObject）")]
+    public GameObject failPanel;
+
+    [Header("回合结果设置")]
+    [Tooltip("显示胜利/失败面板的时间（秒）")]
+    public float resultPanelDisplayTime = 3f;
+
     public enum GameState
     {
         WaitingForLeftGearPlacement,
         WaitingForRightGearPlacement,
         MouseStage,
+        WinState,
+        FailState,
         Transition
     }
 
@@ -51,9 +64,13 @@ public class GameManager : MonoBehaviour
     private readonly List<KeyCode> currentOutOfBoxGears = new List<KeyCode>();
     private readonly Dictionary<KeyCode, bool> keyStates = new Dictionary<KeyCode, bool>();
 
-    // 本回合玩家已放置的左右齿轮（用于 debug）
+    // 本回合玩家已放置的左右齿轮和轨道（用于检查）
     private KeyCode placedLeftGear = KeyCode.None;
     private KeyCode placedRightGear = KeyCode.None;
+    private int placedLeftTrackNumber = 0;
+    private int placedRightTrackNumber = 0;
+    private KeyCode placedLeftTrackKey = KeyCode.None;
+    private KeyCode placedRightTrackKey = KeyCode.None;
 
     // 鼠标阶段
     private bool isHandlingNextRound = false;
@@ -85,6 +102,12 @@ public class GameManager : MonoBehaviour
                 if (requireMouseMoveAfterCorrect)
                     UpdateMouseMove();
                 break;
+
+            case GameState.WinState:
+            case GameState.FailState:
+            case GameState.Transition:
+                // 这些状态不需要每帧处理
+                break;
         }
     }
 
@@ -100,6 +123,10 @@ public class GameManager : MonoBehaviour
         currentOutOfBoxGears.Clear();
         placedLeftGear = KeyCode.None;
         placedRightGear = KeyCode.None;
+        placedLeftTrackNumber = 0;
+        placedRightTrackNumber = 0;
+        placedLeftTrackKey = KeyCode.None;
+        placedRightTrackKey = KeyCode.None;
 
         // 生成新 recipe
         orderController.GenerateNewRecipe();
@@ -112,6 +139,9 @@ public class GameManager : MonoBehaviour
         moveAccumulated = 0f;
         lastMousePos = Input.mousePosition;
         UpdateProgressUI(0f, false);
+
+        // 隐藏所有结果面板
+        HideResultPanels();
 
         Debug.Log($"[Round] New Recipe: {currentRecipe.GetDebugString()}");
     }
@@ -161,69 +191,77 @@ public class GameManager : MonoBehaviour
 
     /// <summary>
     /// 左边：轨道用 1-5，对应 Alpha1~Alpha5
-    /// 要求：玩家按下“当前 recipe 的 leftTrackKey”时，把“盒外队列第一个齿轮”提交为左齿轮
+    /// 要求：玩家按下任意左轨道键(1-5)时，记录"盒外队列第一个齿轮"和轨道信息
     /// </summary>
     private void HandleLeftPlacement()
     {
-        if (Input.GetKeyDown(currentRecipe.leftTrackKey))
+        // 检查所有左轨道键 (1-5)
+        for (int trackNum = 1; trackNum <= 5; trackNum++)
         {
-            if (currentOutOfBoxGears.Count <= 0)
+            KeyCode trackKey = RecipeOrderController.TrackNumberToKeyCode(trackNum);
+            
+            if (Input.GetKeyDown(trackKey))
             {
-                Debug.LogWarning("左轨道按下了，但盒外没有齿轮。");
-                return;
-            }
+                if (currentOutOfBoxGears.Count <= 0)
+                {
+                    Debug.LogWarning($"左轨道 {trackNum} 按下了，但盒外没有齿轮。");
+                    return;
+                }
 
-            var gear = currentOutOfBoxGears[0];
-            currentOutOfBoxGears.RemoveAt(0);
+                var gear = currentOutOfBoxGears[0];
+                currentOutOfBoxGears.RemoveAt(0);
 
-            if (gear == currentRecipe.leftGearKey)
-            {
+                // 记录玩家放置的信息（不管对错）
                 placedLeftGear = gear;
+                placedLeftTrackNumber = trackNum;
+                placedLeftTrackKey = trackKey;
+                
                 onLeftGearDetected?.Invoke(gear);
-                onLeftGearPlacedCorrect?.Invoke();
+                
+                // 进入等待右齿轮阶段
                 currentState = GameState.WaitingForRightGearPlacement;
 
-                Debug.Log($"左齿轮正确：{gear} 放到左轨道 {currentRecipe.leftTrackNumber}（键 {currentRecipe.leftTrackKey}）");
-            }
-            else
-            {
-                Debug.LogWarning($"左齿轮错误：拿到 {gear}，但需要 {currentRecipe.leftGearKey}");
-                onPlacedWrong?.Invoke();
-
-                // 失败处理：直接重开本回合（也可改成扣分/提示）
-                StartNewRound();
+                Debug.Log($"左齿轮已记录：{gear} 放到左轨道 {trackNum}（键 {trackKey}）");
+                return; // 只处理一个按键
             }
         }
     }
 
     /// <summary>
     /// 右边：轨道用 6-10，对应 Alpha6~Alpha0（10 用 0）
-    /// 要求：玩家按下“当前 recipe 的 rightTrackKey”时，把“盒外队列第一个齿轮”提交为右齿轮
+    /// 要求：玩家按下任意右轨道键(6-10)时，记录"盒外队列第一个齿轮"和轨道信息，然后检查结果
     /// </summary>
     private void HandleRightPlacement()
     {
-        if (Input.GetKeyDown(currentRecipe.rightTrackKey))
+        // 检查所有右轨道键 (6-10)
+        for (int trackNum = 6; trackNum <= 10; trackNum++)
         {
-            if (currentOutOfBoxGears.Count <= 0)
+            KeyCode trackKey = RecipeOrderController.TrackNumberToKeyCode(trackNum);
+            
+            if (Input.GetKeyDown(trackKey))
             {
-                Debug.LogWarning("右轨道按下了，但盒外没有齿轮。");
-                return;
-            }
+                if (currentOutOfBoxGears.Count <= 0)
+                {
+                    Debug.LogWarning($"右轨道 {trackNum} 按下了，但盒外没有齿轮。");
+                    return;
+                }
 
-            var gear = currentOutOfBoxGears[0];
-            currentOutOfBoxGears.RemoveAt(0);
+                var gear = currentOutOfBoxGears[0];
+                currentOutOfBoxGears.RemoveAt(0);
 
-            if (gear == currentRecipe.rightGearKey)
-            {
+                // 记录玩家放置的信息（不管对错）
                 placedRightGear = gear;
+                placedRightTrackNumber = trackNum;
+                placedRightTrackKey = trackKey;
+                
                 onRightGearDetected?.Invoke(gear);
-                onRightGearPlacedCorrect?.Invoke();
 
-                Debug.Log($"右齿轮正确：{gear} 放到右轨道 {currentRecipe.rightTrackNumber}（键 {currentRecipe.rightTrackKey}）");
+                Debug.Log($"右齿轮已记录：{gear} 放到右轨道 {trackNum}（键 {trackKey}）");
 
-                // 两边都放对，进入鼠标阶段
+                // 两个齿轮都记录完了，现在进行检查
                 if (requireMouseMoveAfterCorrect)
                 {
+                    // 需要鼠标阶段：先进入鼠标阶段，完成后再检查
                     currentState = GameState.MouseStage;
                     onEnterMouseStage?.Invoke();
                     moveAccumulated = 0f;
@@ -232,15 +270,11 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    // 不需要鼠标阶段就直接下一回合
-                    RoundWinAndNext();
+                    // 不需要鼠标阶段：直接检查结果
+                    CheckRoundResult();
                 }
-            }
-            else
-            {
-                Debug.LogWarning($"右齿轮错误：拿到 {gear}，但需要 {currentRecipe.rightGearKey}");
-                onPlacedWrong?.Invoke();
-                StartNewRound();
+                
+                return; // 只处理一个按键
             }
         }
     }
@@ -274,23 +308,115 @@ public class GameManager : MonoBehaviour
         if (moveAccumulated >= requiredMoveTime)
         {
             UpdateProgressUI(1f, false);
-            RoundWinAndNext();
+            CheckRoundResult();
         }
     }
 
-    private void RoundWinAndNext()
+    /// <summary>
+    /// 检查回合结果：验证玩家输入是否与订单匹配
+    /// 检查内容：左齿轮类型、左轨道号、右齿轮类型、右轨道号
+    /// </summary>
+    private void CheckRoundResult()
     {
         if (isHandlingNextRound) return;
 
-        onRoundWin?.Invoke();
-        StartCoroutine(NextRoundRoutine());
+        // 检查玩家放置的齿轮类型和轨道号是否与订单完全匹配
+        bool leftGearCorrect = (placedLeftGear == currentRecipe.leftGearKey);
+        bool leftTrackCorrect = (placedLeftTrackNumber == currentRecipe.leftTrackNumber);
+        bool rightGearCorrect = (placedRightGear == currentRecipe.rightGearKey);
+        bool rightTrackCorrect = (placedRightTrackNumber == currentRecipe.rightTrackNumber);
+
+        bool isCorrect = leftGearCorrect && leftTrackCorrect && rightGearCorrect && rightTrackCorrect;
+
+        // 输出详细的检查结果
+        Debug.Log($"[Round Check] 左齿轮: {placedLeftGear} (期望: {currentRecipe.leftGearKey}) - {(leftGearCorrect ? "✓" : "✗")}");
+        Debug.Log($"[Round Check] 左轨道: {placedLeftTrackNumber} (期望: {currentRecipe.leftTrackNumber}) - {(leftTrackCorrect ? "✓" : "✗")}");
+        Debug.Log($"[Round Check] 右齿轮: {placedRightGear} (期望: {currentRecipe.rightGearKey}) - {(rightGearCorrect ? "✓" : "✗")}");
+        Debug.Log($"[Round Check] 右轨道: {placedRightTrackNumber} (期望: {currentRecipe.rightTrackNumber}) - {(rightTrackCorrect ? "✓" : "✗")}");
+
+        if (isCorrect)
+        {
+            // 胜利：显示胜利面板
+            ShowWinPanel();
+            onRoundWin?.Invoke();
+            StartCoroutine(ResultPanelRoutine(true));
+        }
+        else
+        {
+            // 失败：显示失败面板
+            ShowFailPanel();
+            onPlacedWrong?.Invoke();
+            StartCoroutine(ResultPanelRoutine(false));
+        }
     }
 
-    private IEnumerator NextRoundRoutine()
+    /// <summary>
+    /// 显示胜利面板
+    /// </summary>
+    private void ShowWinPanel()
+    {
+        if (winPanel != null)
+        {
+            winPanel.SetActive(true);
+        }
+        if (failPanel != null)
+        {
+            failPanel.SetActive(false);
+        }
+        currentState = GameState.WinState;
+        Debug.Log("[Round] 回合胜利！玩家输入与订单匹配。");
+    }
+
+    /// <summary>
+    /// 显示失败面板
+    /// </summary>
+    private void ShowFailPanel()
+    {
+        if (failPanel != null)
+        {
+            failPanel.SetActive(true);
+        }
+        if (winPanel != null)
+        {
+            winPanel.SetActive(false);
+        }
+        currentState = GameState.FailState;
+        Debug.LogWarning($"[Round] 回合失败！期望: L{currentRecipe.leftTrackNumber}-{currentRecipe.leftGearKey}, R{currentRecipe.rightTrackNumber}-{currentRecipe.rightGearKey} | 实际: L{placedLeftTrackNumber}-{placedLeftGear}, R{placedRightTrackNumber}-{placedRightGear}");
+    }
+
+    /// <summary>
+    /// 隐藏所有结果面板
+    /// </summary>
+    private void HideResultPanels()
+    {
+        if (winPanel != null)
+        {
+            winPanel.SetActive(false);
+        }
+        if (failPanel != null)
+        {
+            failPanel.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 处理结果面板显示后的逻辑
+    /// </summary>
+    private IEnumerator ResultPanelRoutine(bool isWin)
     {
         isHandlingNextRound = true;
+        currentState = isWin ? GameState.WinState : GameState.FailState;
+
+        // 显示面板3秒
+        yield return new WaitForSeconds(resultPanelDisplayTime);
+
+        // 隐藏面板
+        HideResultPanels();
+
+        // 进入过渡状态
         currentState = GameState.Transition;
 
+        // 等待一小段时间后进入下一回合
         yield return new WaitForSeconds(nextRoundDelay);
 
         StartNewRound();

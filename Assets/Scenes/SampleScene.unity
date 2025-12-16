@@ -468,42 +468,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f03bc603f220e6642a51b0bc04930bd6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecipeOrderController
-  orderDisplayImage: {fileID: 325447431}
   orderText: {fileID: 150785876}
-  minOrderCount: 1
-  maxOrderCount: 3
-  generateOrderDelay: 2
-  allRecipes:
-  - recipeNumber: 1
-    recipeName: Recipe #1
-    firstGearKey: Z
-    secondGearKey: X
-    recipeSprite: {fileID: 0}
-  - recipeNumber: 2
-    recipeName: Recipe #2
-    firstGearKey: Z
-    secondGearKey: C
-    recipeSprite: {fileID: 0}
-  - recipeNumber: 3
-    recipeName: Recipe #3
-    firstGearKey: X
-    secondGearKey: Z
-    recipeSprite: {fileID: 0}
-  - recipeNumber: 4
-    recipeName: Recipe #4
-    firstGearKey: X
-    secondGearKey: C
-    recipeSprite: {fileID: 0}
-  - recipeNumber: 5
-    recipeName: Recipe #5
-    firstGearKey: C
-    secondGearKey: Z
-    recipeSprite: {fileID: 0}
-  - recipeNumber: 6
-    recipeName: Recipe #6
-    firstGearKey: C
-    secondGearKey: X
-    recipeSprite: {fileID: 0}
+  allowSameGearBothSides: 0
 --- !u!114 &325447431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -691,7 +657,7 @@ GameObject:
   - component: {fileID: 380522010}
   - component: {fileID: 380522009}
   m_Layer: 5
-  m_Name: TrackR
+  m_Name: Track9
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -898,7 +864,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &416542548
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1106,7 +1072,7 @@ GameObject:
   - component: {fileID: 583156127}
   - component: {fileID: 583156126}
   m_Layer: 0
-  m_Name: GearTrackController
+  m_Name: GearTrackControllerLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1125,10 +1091,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GearTrackController
   gearTracks:
-  - trackName: TrackQ
-    keyCode: 113
-    gearObject: {fileID: 1942676291}
-    trackHintImage: {fileID: 1942676293}
+  - trackName: Track1
+    keyCode: 49
+    gearObject: {fileID: 588212252}
+    trackHintImage: {fileID: 588212254}
     isGearInstalled: 0
     onGearInstalled:
       m_PersistentCalls:
@@ -1139,10 +1105,10 @@ MonoBehaviour:
     onTrackTriggered:
       m_PersistentCalls:
         m_Calls: []
-  - trackName: TrackW
-    keyCode: 119
-    gearObject: {fileID: 1711978398}
-    trackHintImage: {fileID: 1711978400}
+  - trackName: Track2
+    keyCode: 50
+    gearObject: {fileID: 804990148}
+    trackHintImage: {fileID: 804990150}
     isGearInstalled: 0
     onGearInstalled:
       m_PersistentCalls:
@@ -1153,10 +1119,10 @@ MonoBehaviour:
     onTrackTriggered:
       m_PersistentCalls:
         m_Calls: []
-  - trackName: TrackE
-    keyCode: 101
-    gearObject: {fileID: 1458883188}
-    trackHintImage: {fileID: 1458883190}
+  - trackName: Track3
+    keyCode: 51
+    gearObject: {fileID: 1026217466}
+    trackHintImage: {fileID: 1026217468}
     isGearInstalled: 0
     onGearInstalled:
       m_PersistentCalls:
@@ -1167,10 +1133,10 @@ MonoBehaviour:
     onTrackTriggered:
       m_PersistentCalls:
         m_Calls: []
-  - trackName: TrackR
-    keyCode: 114
-    gearObject: {fileID: 380522007}
-    trackHintImage: {fileID: 380522009}
+  - trackName: Track4
+    keyCode: 52
+    gearObject: {fileID: 1297367553}
+    trackHintImage: {fileID: 1297367555}
     isGearInstalled: 0
     onGearInstalled:
       m_PersistentCalls:
@@ -1181,10 +1147,10 @@ MonoBehaviour:
     onTrackTriggered:
       m_PersistentCalls:
         m_Calls: []
-  - trackName: TrackT
-    keyCode: 116
-    gearObject: {fileID: 2113737985}
-    trackHintImage: {fileID: 2113737986}
+  - trackName: Track5
+    keyCode: 53
+    gearObject: {fileID: 708106638}
+    trackHintImage: {fileID: 708106640}
     isGearInstalled: 0
     onGearInstalled:
       m_PersistentCalls:
@@ -1197,6 +1163,7 @@ MonoBehaviour:
         m_Calls: []
   holdToActivate: 1
   showHintOnKeyPress: 1
+  isRightSide: 0
 --- !u!4 &583156127
 Transform:
   m_ObjectHideFlags: 0
@@ -1212,6 +1179,81 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &588212252
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 588212253}
+  - component: {fileID: 588212255}
+  - component: {fileID: 588212254}
+  m_Layer: 5
+  m_Name: Track1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &588212253
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588212252}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.20000002, y: 0.20000002, z: 0.40000004}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 650633334}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -109.5, y: 40.6}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &588212254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588212252}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0.91844153, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &588212255
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588212252}
+  m_CullTransparentMesh: 1
 --- !u!1 &650633333
 GameObject:
   m_ObjectHideFlags: 0
@@ -1242,6 +1284,11 @@ RectTransform:
   m_LocalScale: {x: 4.02, y: 4.02, z: 2.01}
   m_ConstrainProportionsScale: 1
   m_Children:
+  - {fileID: 588212253}
+  - {fileID: 804990149}
+  - {fileID: 1026217467}
+  - {fileID: 1297367554}
+  - {fileID: 708106639}
   - {fileID: 1942676292}
   - {fileID: 1711978399}
   - {fileID: 1458883189}
@@ -1291,6 +1338,156 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 650633333}
+  m_CullTransparentMesh: 1
+--- !u!1 &708106638
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 708106639}
+  - component: {fileID: 708106641}
+  - component: {fileID: 708106640}
+  m_Layer: 5
+  m_Name: Track5
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &708106639
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708106638}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.20000002, y: 0.20000002, z: 0.40000004}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 650633334}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -111.6, y: -40.18}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &708106640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708106638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0.91844153, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &708106641
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708106638}
+  m_CullTransparentMesh: 1
+--- !u!1 &804990148
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 804990149}
+  - component: {fileID: 804990151}
+  - component: {fileID: 804990150}
+  m_Layer: 5
+  m_Name: Track2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &804990149
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 804990148}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.20000002, y: 0.20000002, z: 0.40000004}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 650633334}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -111.6, y: 20.1}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &804990150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 804990148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0.91844153, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &804990151
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 804990148}
   m_CullTransparentMesh: 1
 --- !u!1 &832575517
 GameObject:
@@ -1447,47 +1644,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   orderController: {fileID: 325447430}
   gearTypeController: {fileID: 1256942750}
-  firstGearTrackKey: 121
-  secondGearTrackKey: 101
-  submitKey: 115
+  gearKeys: 610000006200000063000000
+  onLeftGearDetected:
+    m_PersistentCalls:
+      m_Calls: []
+  onRightGearDetected:
+    m_PersistentCalls:
+      m_Calls: []
+  onLeftGearPlacedCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  onRightGearPlacedCorrect:
+    m_PersistentCalls:
+      m_Calls: []
+  onPlacedWrong:
+    m_PersistentCalls:
+      m_Calls: []
+  onEnterMouseStage:
+    m_PersistentCalls:
+      m_Calls: []
+  onRoundWin:
+    m_PersistentCalls:
+      m_Calls: []
+  requireMouseMoveAfterCorrect: 1
+  requiredMoveTime: 1.5
+  minMouseSpeed: 50
+  speedAffectsProgress: 1
+  maxProgressMultiplier: 3
+  nextRoundDelay: 0.8
+  mouseProgressSlider: {fileID: 0}
   currentState: 0
-  playerInputs: []
-  currentRecipeIndex: 0
-  winPanel: {fileID: 416542547}
-  failPanel: {fileID: 1943648885}
-  onFirstGearDetected:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onSecondGearDetected:
-    m_PersistentCalls:
-      m_Calls: []
-  onFirstGearPlaced:
-    m_PersistentCalls:
-      m_Calls: []
-  onSecondGearPlaced:
-    m_PersistentCalls:
-      m_Calls: []
-  onAllRecipesInput:
-    m_PersistentCalls:
-      m_Calls: []
-  onSubmitSuccess:
-    m_PersistentCalls:
-      m_Calls: []
-  onSubmitFailed:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!4 &922132020
 Transform:
   m_ObjectHideFlags: 0
@@ -1805,6 +1991,81 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1025170136}
   m_CullTransparentMesh: 1
+--- !u!1 &1026217466
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1026217467}
+  - component: {fileID: 1026217469}
+  - component: {fileID: 1026217468}
+  m_Layer: 5
+  m_Name: Track3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1026217467
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026217466}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.20000002, y: 0.20000002, z: 0.40000004}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 650633334}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -111.6, y: 0.04}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1026217468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026217466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0.91844153, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1026217469
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026217466}
+  m_CullTransparentMesh: 1
 --- !u!1 &1059581724
 GameObject:
   m_ObjectHideFlags: 0
@@ -1817,7 +2078,7 @@ GameObject:
   - component: {fileID: 1059581727}
   - component: {fileID: 1059581726}
   m_Layer: 5
-  m_Name: GearZ
+  m_Name: GearA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2044,8 +2305,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GearTypeController
   gearTypes:
-  - gearTypeName: GearZ
-    keyCode: 122
+  - gearTypeName: GearA
+    keyCode: 97
     gearUI: {fileID: 1059581726}
     gearObject: {fileID: 1059581724}
     isInUse: 0
@@ -2056,8 +2317,8 @@ MonoBehaviour:
     onGearPutBack:
       m_PersistentCalls:
         m_Calls: []
-  - gearTypeName: GearX
-    keyCode: 120
+  - gearTypeName: GearB
+    keyCode: 98
     gearUI: {fileID: 2116604623}
     gearObject: {fileID: 2116604621}
     isInUse: 0
@@ -2123,6 +2384,199 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1256942748}
   m_CullTransparentMesh: 1
+--- !u!1 &1297367553
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1297367554}
+  - component: {fileID: 1297367556}
+  - component: {fileID: 1297367555}
+  m_Layer: 5
+  m_Name: Track4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1297367554
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1297367553}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.20000002, y: 0.20000002, z: 0.40000004}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 650633334}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -111.6, y: -19}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1297367555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1297367553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0.91844153, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1297367556
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1297367553}
+  m_CullTransparentMesh: 1
+--- !u!1 &1370305355
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1370305357}
+  - component: {fileID: 1370305356}
+  m_Layer: 0
+  m_Name: GearTrackControllerRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1370305356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1370305355}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 329976619d6f6654d93945bedec7def8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GearTrackController
+  gearTracks:
+  - trackName: Track6
+    keyCode: 0
+    gearObject: {fileID: 1942676291}
+    trackHintImage: {fileID: 1942676293}
+    isGearInstalled: 0
+    onGearInstalled:
+      m_PersistentCalls:
+        m_Calls: []
+    onGearRemoved:
+      m_PersistentCalls:
+        m_Calls: []
+    onTrackTriggered:
+      m_PersistentCalls:
+        m_Calls: []
+  - trackName: Track7
+    keyCode: 55
+    gearObject: {fileID: 1711978398}
+    trackHintImage: {fileID: 1711978400}
+    isGearInstalled: 0
+    onGearInstalled:
+      m_PersistentCalls:
+        m_Calls: []
+    onGearRemoved:
+      m_PersistentCalls:
+        m_Calls: []
+    onTrackTriggered:
+      m_PersistentCalls:
+        m_Calls: []
+  - trackName: Track8
+    keyCode: 56
+    gearObject: {fileID: 1458883188}
+    trackHintImage: {fileID: 1458883190}
+    isGearInstalled: 0
+    onGearInstalled:
+      m_PersistentCalls:
+        m_Calls: []
+    onGearRemoved:
+      m_PersistentCalls:
+        m_Calls: []
+    onTrackTriggered:
+      m_PersistentCalls:
+        m_Calls: []
+  - trackName: Track9
+    keyCode: 57
+    gearObject: {fileID: 380522007}
+    trackHintImage: {fileID: 380522009}
+    isGearInstalled: 0
+    onGearInstalled:
+      m_PersistentCalls:
+        m_Calls: []
+    onGearRemoved:
+      m_PersistentCalls:
+        m_Calls: []
+    onTrackTriggered:
+      m_PersistentCalls:
+        m_Calls: []
+  - trackName: Track10
+    keyCode: 48
+    gearObject: {fileID: 2113737985}
+    trackHintImage: {fileID: 2113737986}
+    isGearInstalled: 1
+    onGearInstalled:
+      m_PersistentCalls:
+        m_Calls: []
+    onGearRemoved:
+      m_PersistentCalls:
+        m_Calls: []
+    onTrackTriggered:
+      m_PersistentCalls:
+        m_Calls: []
+  holdToActivate: 1
+  showHintOnKeyPress: 1
+  isRightSide: 1
+--- !u!4 &1370305357
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1370305355}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 562.0241, y: 619.5439, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1406500415
 GameObject:
   m_ObjectHideFlags: 0
@@ -2139,7 +2593,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1406500416
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2186,7 +2640,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1412172887
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2296,7 +2750,7 @@ GameObject:
   - component: {fileID: 1458883191}
   - component: {fileID: 1458883190}
   m_Layer: 5
-  m_Name: TrackE
+  m_Name: Track8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2582,7 +3036,7 @@ GameObject:
   - component: {fileID: 1711978401}
   - component: {fileID: 1711978400}
   m_Layer: 5
-  m_Name: TrackW
+  m_Name: Track7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2737,7 +3191,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1789695730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2882,7 +3336,7 @@ GameObject:
   - component: {fileID: 1942676294}
   - component: {fileID: 1942676293}
   m_Layer: 5
-  m_Name: TrackQ
+  m_Name: Track6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2962,7 +3416,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1943648886
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3244,7 +3698,7 @@ GameObject:
   - component: {fileID: 2113737987}
   - component: {fileID: 2113737986}
   m_Layer: 5
-  m_Name: TrackT
+  m_Name: Track10
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3319,7 +3773,7 @@ GameObject:
   - component: {fileID: 2116604624}
   - component: {fileID: 2116604623}
   m_Layer: 5
-  m_Name: GearX
+  m_Name: GearB
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3395,4 +3849,5 @@ SceneRoots:
   - {fileID: 18297221}
   - {fileID: 1406500417}
   - {fileID: 583156127}
+  - {fileID: 1370305357}
   - {fileID: 922132020}

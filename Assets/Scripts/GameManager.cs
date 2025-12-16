@@ -2,537 +2,308 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
-/// <summary>
-/// 游戏主管理器
-/// 控制完整的游戏流程：订单生成 -> 检测齿轮输入 -> 验证提交
-/// </summary>
 public class GameManager : MonoBehaviour
 {
     [Header("系统引用")]
-    [Tooltip("订单控制器")]
     public RecipeOrderController orderController;
-
-    [Tooltip("齿轮型号控制器")]
     public GearTypeController gearTypeController;
 
-    [Header("轨道设置")]
-    [Tooltip("第一个齿轮放置的轨道按键（Y键）")]
-    public KeyCode firstGearTrackKey = KeyCode.Y;
-
-    [Tooltip("第二个齿轮放置的轨道按键（E键）")]
-    public KeyCode secondGearTrackKey = KeyCode.E;
-
-    [Tooltip("确认提交按键（S键）")]
-    public KeyCode submitKey = KeyCode.S;
-
-    [Header("游戏状态")]
-    [Tooltip("当前游戏状态")]
-    public GameState currentState = GameState.WaitingForFirstGearPlacement;
-
-    [Header("当前输入记录")]
-    [Tooltip("玩家输入的Recipe列表")]
-    public List<PlayerRecipeInput> playerInputs = new List<PlayerRecipeInput>();
-
-    [Tooltip("当前正在输入的Recipe索引（0开始）")]
-    public int currentRecipeIndex = 0;
-
-    [Header("UI面板")]
-    [Tooltip("成功面板（WinPanel）")]
-    public GameObject winPanel;
-
-    [Tooltip("失败面板（FailPanel）")]
-    public GameObject failPanel;
+    [Header("齿轮按键（ABC）")]
+    public List<KeyCode> gearKeys = new List<KeyCode> { KeyCode.A, KeyCode.B, KeyCode.C };
 
     [Header("事件")]
-    [Tooltip("当检测到first gear时触发")]
-    public UnityEvent<KeyCode> onFirstGearDetected;
+    public UnityEvent<KeyCode> onLeftGearDetected;     // 记录“先离盒”的齿轮
+    public UnityEvent<KeyCode> onRightGearDetected;    // 记录“后离盒”的齿轮
+    public UnityEvent onLeftGearPlacedCorrect;
+    public UnityEvent onRightGearPlacedCorrect;
+    public UnityEvent onPlacedWrong;
+    public UnityEvent onEnterMouseStage;
+    public UnityEvent onRoundWin;
 
-    [Tooltip("当检测到second gear时触发")]
-    public UnityEvent<KeyCode> onSecondGearDetected;
+    [Header("胜利相关（放对齿轮后，要求持续移动鼠标）")]
+    public bool requireMouseMoveAfterCorrect = true;
+    public float requiredMoveTime = 1.5f;
+    public float minMouseSpeed = 50f;
+    public bool speedAffectsProgress = true;
+    public float maxProgressMultiplier = 3f;
+    public float nextRoundDelay = 0.8f;
 
-    [Tooltip("当first gear放置在轨道上时触发")]
-    public UnityEvent onFirstGearPlaced;
-
-    [Tooltip("当second gear放置在轨道上时触发")]
-    public UnityEvent onSecondGearPlaced;
-
-    [Tooltip("当所有Recipe输入完成时触发")]
-    public UnityEvent onAllRecipesInput;
-
-    [Tooltip("当提交成功时触发")]
-    public UnityEvent onSubmitSuccess;
-
-    [Tooltip("当提交失败时触发")]
-    public UnityEvent onSubmitFailed;
-
-    // 当前在盒子外面的齿轮（已松开但未放置的齿轮）
-    private List<KeyCode> currentOutOfBoxGears = new List<KeyCode>();
-
-    // 跟踪按键状态（用于检测松开和按下）
-    private Dictionary<KeyCode, bool> keyStates = new Dictionary<KeyCode, bool>();
-
-    // 齿轮按键列表（Z、X、C等）
-    private List<KeyCode> gearKeys = new List<KeyCode> { KeyCode.Z, KeyCode.X, KeyCode.C };
+    [Header("UI：鼠标进度条（0~1）")]
+    public Slider mouseProgressSlider;
 
     public enum GameState
     {
-        WaitingForFirstGearPlacement,  // 等待将第一个齿轮放在Y轨道上
-        WaitingForSecondGearPlacement, // 等待将第二个齿轮放在E轨道上
-        WaitingForGearsReturn,         // 等待齿轮放回盒子（准备下一个Recipe）
-        WaitingForSubmit,              // 等待提交
-        Processing,                    // 处理中（防止重复输入）
-        ShowingPanel                   // 显示面板中
+        WaitingForLeftGearPlacement,
+        WaitingForRightGearPlacement,
+        MouseStage,
+        Transition
     }
 
-    [System.Serializable]
-    public class PlayerRecipeInput
-    {
-        public KeyCode firstGear;
-        public KeyCode secondGear;
-        public int recipeNumber = -1; // 对应的Recipe编号，-1表示未匹配
-    }
+    [Header("游戏状态")]
+    public GameState currentState = GameState.WaitingForLeftGearPlacement;
+
+    // 当前 recipe 需求
+    private RecipeOrderController.RoundRecipe currentRecipe;
+
+    // 盒子外的齿轮（按“松开”进入；按回去移除）
+    private readonly List<KeyCode> currentOutOfBoxGears = new List<KeyCode>();
+    private readonly Dictionary<KeyCode, bool> keyStates = new Dictionary<KeyCode, bool>();
+
+    // 本回合玩家已放置的左右齿轮（用于 debug）
+    private KeyCode placedLeftGear = KeyCode.None;
+    private KeyCode placedRightGear = KeyCode.None;
+
+    // 鼠标阶段
+    private bool isHandlingNextRound = false;
+    private float moveAccumulated = 0f;
+    private Vector3 lastMousePos;
 
     private void Start()
     {
-        // 初始化按键状态跟踪
         InitializeKeyStates();
-
-        // 重置游戏状态
-        ResetGame();
+        StartNewRound();
     }
 
     private void Update()
     {
-        // 检测S键（提交/关闭面板）
-        if (Input.GetKeyDown(submitKey))
-        {
-            if (currentState == GameState.ShowingPanel)
-            {
-                // 如果正在显示面板，隐藏面板并刷新订单
-                HideAllPanels();
-                RefreshOrder();
-            }
-            else
-            {
-                // 如果不在显示面板状态，进行验证
-                ValidateAndShowResult();
-            }
-            return;
-        }
-
-        // 如果正在显示面板，不处理其他输入
-        if (currentState == GameState.ShowingPanel)
-            return;
-
-        // 检测齿轮的拿出和放回（所有状态都需要检测）
         HandleGearOutOfBox();
+        UpdateKeyStates();
 
-        // 根据当前状态处理输入
         switch (currentState)
         {
-            case GameState.WaitingForFirstGearPlacement:
-                HandleFirstGearPlacement();
+            case GameState.WaitingForLeftGearPlacement:
+                HandleLeftPlacement();
                 break;
 
-            case GameState.WaitingForSecondGearPlacement:
-                HandleSecondGearPlacement();
+            case GameState.WaitingForRightGearPlacement:
+                HandleRightPlacement();
                 break;
 
-            case GameState.WaitingForGearsReturn:
-                HandleGearsReturn();
-                break;
-
-            case GameState.WaitingForSubmit:
-                // 这个状态现在由S键统一处理，不再需要单独处理
+            case GameState.MouseStage:
+                if (requireMouseMoveAfterCorrect)
+                    UpdateMouseMove();
                 break;
         }
-
-        // 更新按键状态
-        UpdateKeyStates();
     }
 
-    /// <summary>
-    /// 初始化按键状态跟踪
-    /// </summary>
+    private void StartNewRound()
+    {
+        if (orderController == null)
+        {
+            Debug.LogError("GameManager: orderController 未设置！");
+            return;
+        }
+
+        // 清状态
+        currentOutOfBoxGears.Clear();
+        placedLeftGear = KeyCode.None;
+        placedRightGear = KeyCode.None;
+
+        // 生成新 recipe
+        orderController.GenerateNewRecipe();
+        currentRecipe = orderController.GetCurrentRecipe();
+
+        // 回到放左齿轮阶段
+        currentState = GameState.WaitingForLeftGearPlacement;
+
+        // 重置鼠标阶段
+        moveAccumulated = 0f;
+        lastMousePos = Input.mousePosition;
+        UpdateProgressUI(0f, false);
+
+        Debug.Log($"[Round] New Recipe: {currentRecipe.GetDebugString()}");
+    }
+
     private void InitializeKeyStates()
     {
         foreach (var key in gearKeys)
-        {
             keyStates[key] = Input.GetKey(key);
-        }
     }
 
-    /// <summary>
-    /// 更新按键状态
-    /// </summary>
     private void UpdateKeyStates()
     {
         foreach (var key in gearKeys)
-        {
             keyStates[key] = Input.GetKey(key);
-        }
     }
 
     /// <summary>
-    /// 检测齿轮的拿出和放回（持续检测）
+    /// 检测齿轮“离盒/回盒”：按键从按下->松开 视为离盒；松开->按下 视为回盒
     /// </summary>
     private void HandleGearOutOfBox()
     {
         foreach (var key in gearKeys)
         {
-            bool wasPressed = keyStates.ContainsKey(key) ? keyStates[key] : false;
+            bool wasPressed = keyStates.TryGetValue(key, out var v) ? v : false;
             bool isPressed = Input.GetKey(key);
 
-            // 检测从按下到松开的变化（齿轮被拿出）
+            // 按下 -> 松开：离盒
             if (wasPressed && !isPressed)
             {
                 if (!currentOutOfBoxGears.Contains(key))
                 {
                     currentOutOfBoxGears.Add(key);
-                    Debug.Log($"齿轮 {key} 被拿出盒子");
+                    Debug.Log($"齿轮 {key} 离开齿轮盒（进入盒外队列）");
                 }
             }
-            // 检测从松开到按下的变化（齿轮被放回）
+            // 松开 -> 按下：回盒
             else if (!wasPressed && isPressed)
             {
                 if (currentOutOfBoxGears.Contains(key))
                 {
                     currentOutOfBoxGears.Remove(key);
-                    Debug.Log($"齿轮 {key} 被放回盒子");
+                    Debug.Log($"齿轮 {key} 放回齿轮盒（从盒外队列移除）");
                 }
             }
         }
     }
 
     /// <summary>
-    /// 处理第一个齿轮放置（按下Y键时记录）
+    /// 左边：轨道用 1-5，对应 Alpha1~Alpha5
+    /// 要求：玩家按下“当前 recipe 的 leftTrackKey”时，把“盒外队列第一个齿轮”提交为左齿轮
     /// </summary>
-    private void HandleFirstGearPlacement()
+    private void HandleLeftPlacement()
     {
-        if (Input.GetKeyDown(firstGearTrackKey))
+        if (Input.GetKeyDown(currentRecipe.leftTrackKey))
         {
-            // 检查是否有齿轮在盒子外面
-            if (currentOutOfBoxGears.Count > 0)
+            if (currentOutOfBoxGears.Count <= 0)
             {
-                // 记录第一个在盒子外面的齿轮为first gear
-                KeyCode firstGear = currentOutOfBoxGears[0];
-                
-                // 确保有输入记录
-                if (currentRecipeIndex >= playerInputs.Count)
-                {
-                    playerInputs.Add(new PlayerRecipeInput());
-                }
-                playerInputs[currentRecipeIndex].firstGear = firstGear;
+                Debug.LogWarning("左轨道按下了，但盒外没有齿轮。");
+                return;
+            }
 
-                // 从列表中移除（齿轮已放置）
-                currentOutOfBoxGears.RemoveAt(0);
+            var gear = currentOutOfBoxGears[0];
+            currentOutOfBoxGears.RemoveAt(0);
 
-                // 进入下一个状态
-                currentState = GameState.WaitingForSecondGearPlacement;
+            if (gear == currentRecipe.leftGearKey)
+            {
+                placedLeftGear = gear;
+                onLeftGearDetected?.Invoke(gear);
+                onLeftGearPlacedCorrect?.Invoke();
+                currentState = GameState.WaitingForRightGearPlacement;
 
-                onFirstGearDetected?.Invoke(firstGear);
-                onFirstGearPlaced?.Invoke();
-                Debug.Log($"First Gear {firstGear} 已放置在轨道 {firstGearTrackKey} 上");
+                Debug.Log($"左齿轮正确：{gear} 放到左轨道 {currentRecipe.leftTrackNumber}（键 {currentRecipe.leftTrackKey}）");
             }
             else
             {
-                Debug.LogWarning("没有齿轮在盒子外面，无法放置first gear");
+                Debug.LogWarning($"左齿轮错误：拿到 {gear}，但需要 {currentRecipe.leftGearKey}");
+                onPlacedWrong?.Invoke();
+
+                // 失败处理：直接重开本回合（也可改成扣分/提示）
+                StartNewRound();
             }
         }
     }
 
     /// <summary>
-    /// 处理第二个齿轮放置（按下E键时记录）
+    /// 右边：轨道用 6-10，对应 Alpha6~Alpha0（10 用 0）
+    /// 要求：玩家按下“当前 recipe 的 rightTrackKey”时，把“盒外队列第一个齿轮”提交为右齿轮
     /// </summary>
-    private void HandleSecondGearPlacement()
+    private void HandleRightPlacement()
     {
-        if (Input.GetKeyDown(secondGearTrackKey))
+        if (Input.GetKeyDown(currentRecipe.rightTrackKey))
         {
-            // 检查是否有齿轮在盒子外面
-            if (currentOutOfBoxGears.Count > 0)
+            if (currentOutOfBoxGears.Count <= 0)
             {
-                // 记录第一个在盒子外面的齿轮为second gear
-                KeyCode secondGear = currentOutOfBoxGears[0];
-                
-                // 确保有输入记录
-                if (currentRecipeIndex < playerInputs.Count)
-                {
-                    playerInputs[currentRecipeIndex].secondGear = secondGear;
-                }
+                Debug.LogWarning("右轨道按下了，但盒外没有齿轮。");
+                return;
+            }
 
-                // 从列表中移除（齿轮已放置）
-                currentOutOfBoxGears.RemoveAt(0);
+            var gear = currentOutOfBoxGears[0];
+            currentOutOfBoxGears.RemoveAt(0);
 
-                // 检查是否还有更多Recipe需要输入
-                List<int> orders = orderController != null ? orderController.GetCurrentOrders() : new List<int>();
-                
-                if (currentRecipeIndex + 1 < orders.Count)
+            if (gear == currentRecipe.rightGearKey)
+            {
+                placedRightGear = gear;
+                onRightGearDetected?.Invoke(gear);
+                onRightGearPlacedCorrect?.Invoke();
+
+                Debug.Log($"右齿轮正确：{gear} 放到右轨道 {currentRecipe.rightTrackNumber}（键 {currentRecipe.rightTrackKey}）");
+
+                // 两边都放对，进入鼠标阶段
+                if (requireMouseMoveAfterCorrect)
                 {
-                    // 还有更多Recipe，等待齿轮放回盒子
-                    currentState = GameState.WaitingForGearsReturn;
-                    Debug.Log($"第二个齿轮已放置，等待所有齿轮放回盒子后开始第 {currentRecipeIndex + 2} 个Recipe");
+                    currentState = GameState.MouseStage;
+                    onEnterMouseStage?.Invoke();
+                    moveAccumulated = 0f;
+                    lastMousePos = Input.mousePosition;
+                    UpdateProgressUI(0f, true);
                 }
                 else
                 {
-                    // 所有Recipe输入完成，等待提交
-                    currentState = GameState.WaitingForSubmit;
-                    Debug.Log("所有Recipe输入完成，等待提交（按S键）");
+                    // 不需要鼠标阶段就直接下一回合
+                    RoundWinAndNext();
                 }
-
-                onSecondGearDetected?.Invoke(secondGear);
-                onSecondGearPlaced?.Invoke();
-                Debug.Log($"Second Gear {secondGear} 已放置在轨道 {secondGearTrackKey} 上");
             }
             else
             {
-                Debug.LogWarning("没有齿轮在盒子外面，无法放置second gear");
+                Debug.LogWarning($"右齿轮错误：拿到 {gear}，但需要 {currentRecipe.rightGearKey}");
+                onPlacedWrong?.Invoke();
+                StartNewRound();
             }
         }
     }
 
-    /// <summary>
-    /// 处理齿轮放回盒子（检查是否所有齿轮都放回）
-    /// </summary>
-    private void HandleGearsReturn()
+    private void UpdateMouseMove()
     {
-        // 检查是否所有齿轮都放回盒子了
-        if (currentOutOfBoxGears.Count == 0)
+        if (isHandlingNextRound) return;
+
+        Vector3 current = Input.mousePosition;
+        float distance = Vector3.Distance(current, lastMousePos);
+        float speed = (Time.deltaTime > 0f) ? distance / Time.deltaTime : 0f;
+        lastMousePos = current;
+
+        if (speed >= minMouseSpeed)
         {
-            // 所有齿轮都放回了，开始下一个Recipe
-            List<int> orders = orderController != null ? orderController.GetCurrentOrders() : new List<int>();
-            
-            if (currentRecipeIndex + 1 < orders.Count)
+            float multiplier = 1f;
+
+            if (speedAffectsProgress)
             {
-                currentRecipeIndex++;
-                currentState = GameState.WaitingForFirstGearPlacement;
-                Debug.Log($"开始输入第 {currentRecipeIndex + 1} 个Recipe");
-            }
-            else
-            {
-                // 所有Recipe输入完成，等待提交
-                currentState = GameState.WaitingForSubmit;
-                Debug.Log("所有Recipe输入完成，等待提交（按S键）");
-            }
-        }
-    }
-
-    /// <summary>
-    /// 验证并显示结果（不管当前处于什么阶段）
-    /// </summary>
-    private void ValidateAndShowResult()
-    {
-        if (orderController == null)
-        {
-            Debug.LogError("GameManager: orderController 未设置！");
-            return;
-        }
-
-        currentState = GameState.Processing;
-
-        List<int> orders = orderController.GetCurrentOrders();
-        
-        // 为每个玩家输入匹配Recipe编号
-        foreach (var input in playerInputs)
-        {
-            if (input.recipeNumber == -1 && input.firstGear != KeyCode.None && input.secondGear != KeyCode.None)
-            {
-                input.recipeNumber = orderController.GetRecipeByGears(input.firstGear, input.secondGear);
-            }
-        }
-
-        // 检查玩家输入的Recipe是否与订单匹配
-        bool allMatch = ValidateRecipes(orders);
-
-        // 显示对应的面板
-        if (allMatch)
-        {
-            ShowWinPanel();
-        }
-        else
-        {
-            ShowFailPanel();
-        }
-
-        currentState = GameState.ShowingPanel;
-    }
-
-    /// <summary>
-    /// 验证Recipe是否匹配
-    /// </summary>
-    private bool ValidateRecipes(List<int> orders)
-    {
-        if (orders == null || orders.Count == 0)
-        {
-            Debug.LogWarning("订单列表为空");
-            return false;
-        }
-
-        // 检查玩家输入的Recipe是否与订单匹配
-        bool allMatch = true;
-        List<int> playerRecipeNumbers = new List<int>();
-        
-        foreach (var input in playerInputs)
-        {
-            if (input.recipeNumber > 0)
-            {
-                playerRecipeNumbers.Add(input.recipeNumber);
-            }
-        }
-
-        // 检查数量是否匹配
-        if (playerRecipeNumbers.Count != orders.Count)
-        {
-            allMatch = false;
-            Debug.Log($"数量不匹配：订单有 {orders.Count} 个，玩家输入了 {playerRecipeNumbers.Count} 个");
-        }
-        else
-        {
-            // 检查每个Recipe是否都在订单中
-            foreach (var recipeNumber in playerRecipeNumbers)
-            {
-                if (!orders.Contains(recipeNumber))
-                {
-                    allMatch = false;
-                    Debug.Log($"Recipe {recipeNumber} 不在订单中");
-                    break;
-                }
+                float normalized = (speed - minMouseSpeed) / Mathf.Max(minMouseSpeed, 0.0001f);
+                normalized = Mathf.Clamp01(normalized);
+                multiplier = Mathf.Lerp(1f, maxProgressMultiplier, normalized);
             }
 
-            // 检查订单中的每个Recipe是否都被输入了
-            foreach (var orderNumber in orders)
-            {
-                if (!playerRecipeNumbers.Contains(orderNumber))
-                {
-                    allMatch = false;
-                    Debug.Log($"订单中的 Recipe {orderNumber} 未被输入");
-                    break;
-                }
-            }
+            moveAccumulated += Time.deltaTime * multiplier;
         }
 
-        return allMatch;
-    }
+        float t = Mathf.Clamp01(requiredMoveTime > 0f ? moveAccumulated / requiredMoveTime : 1f);
+        UpdateProgressUI(t, true);
 
-    /// <summary>
-    /// 显示成功面板
-    /// </summary>
-    private void ShowWinPanel()
-    {
-        HideAllPanels();
-        if (winPanel != null)
+        if (moveAccumulated >= requiredMoveTime)
         {
-            winPanel.SetActive(true);
-            Debug.Log("显示成功面板！");
-        }
-        else
-        {
-            Debug.LogWarning("WinPanel未设置！");
-        }
-        onSubmitSuccess?.Invoke();
-    }
-
-    /// <summary>
-    /// 显示失败面板
-    /// </summary>
-    private void ShowFailPanel()
-    {
-        HideAllPanels();
-        if (failPanel != null)
-        {
-            failPanel.SetActive(true);
-            Debug.Log("显示失败面板！");
-        }
-        else
-        {
-            Debug.LogWarning("FailPanel未设置！");
-        }
-        onSubmitFailed?.Invoke();
-    }
-
-    /// <summary>
-    /// 隐藏所有面板
-    /// </summary>
-    private void HideAllPanels()
-    {
-        if (winPanel != null)
-        {
-            winPanel.SetActive(false);
-        }
-        if (failPanel != null)
-        {
-            failPanel.SetActive(false);
+            UpdateProgressUI(1f, false);
+            RoundWinAndNext();
         }
     }
 
-    /// <summary>
-    /// 刷新订单（完成当前订单并生成新订单）
-    /// </summary>
-    private void RefreshOrder()
+    private void RoundWinAndNext()
     {
-        if (orderController == null)
-        {
-            Debug.LogError("GameManager: orderController 未设置！");
-            return;
-        }
+        if (isHandlingNextRound) return;
 
-        // 如果验证成功，完成所有订单
-        List<int> orders = orderController.GetCurrentOrders();
-        bool allMatch = ValidateRecipes(orders);
-        
-        if (allMatch)
-        {
-            // 完成所有订单
-            foreach (var orderNumber in orders)
-            {
-                orderController.CompleteOrder(orderNumber);
-            }
-        }
-
-        // 重置游戏状态
-        ResetGame();
-        
-        Debug.Log("订单已刷新，游戏已重置");
+        onRoundWin?.Invoke();
+        StartCoroutine(NextRoundRoutine());
     }
 
-    /// <summary>
-    /// 重置游戏
-    /// </summary>
-    public void ResetGame()
+    private IEnumerator NextRoundRoutine()
     {
-        currentState = GameState.WaitingForFirstGearPlacement;
-        currentRecipeIndex = 0;
-        playerInputs.Clear();
-        currentOutOfBoxGears.Clear();
-        
-        // 确保面板已隐藏
-        HideAllPanels();
-        
-        Debug.Log("游戏已重置，等待第一个齿轮放置");
+        isHandlingNextRound = true;
+        currentState = GameState.Transition;
+
+        yield return new WaitForSeconds(nextRoundDelay);
+
+        StartNewRound();
+        isHandlingNextRound = false;
     }
 
-    /// <summary>
-    /// 获取当前状态描述（用于调试）
-    /// </summary>
-    public string GetCurrentStateDescription()
+    private void UpdateProgressUI(float normalizedValue, bool show)
     {
-        switch (currentState)
-        {
-            case GameState.WaitingForFirstGearPlacement:
-                return $"等待将第一个齿轮放在轨道上（按{firstGearTrackKey}键）";
-            case GameState.WaitingForSecondGearPlacement:
-                return $"等待将第二个齿轮放在轨道上（按{secondGearTrackKey}键）";
-            case GameState.WaitingForGearsReturn:
-                return "等待所有齿轮放回盒子";
-            case GameState.WaitingForSubmit:
-                return $"等待提交（按{submitKey}键）";
-            case GameState.Processing:
-                return "处理中...";
-            case GameState.ShowingPanel:
-                return "显示面板中";
-            default:
-                return "未知状态";
-        }
+        if (mouseProgressSlider == null) return;
+
+        mouseProgressSlider.minValue = 0f;
+        mouseProgressSlider.maxValue = 1f;
+        mouseProgressSlider.value = Mathf.Clamp01(normalizedValue);
+        mouseProgressSlider.gameObject.SetActive(show);
     }
 }
-

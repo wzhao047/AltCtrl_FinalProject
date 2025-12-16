@@ -123,8 +123,8 @@ public class GearTypeController : MonoBehaviour
     {
         gearTypes = new List<GearType>
         {
-            new GearType { gearTypeName = "齿轮Z", keyCode = KeyCode.Z },
-            new GearType { gearTypeName = "齿轮X", keyCode = KeyCode.X },
+            new GearType { gearTypeName = "齿轮A", keyCode = KeyCode.A },
+            new GearType { gearTypeName = "齿轮B", keyCode = KeyCode.B },
             new GearType { gearTypeName = "齿轮C", keyCode = KeyCode.C }
         };
     }

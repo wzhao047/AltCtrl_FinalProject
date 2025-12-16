@@ -43,7 +43,7 @@ public class GearTrackController : MonoBehaviour
     }
 
     [Header("五个齿轮轨道配置")]
-    [Tooltip("五个轨道：Q、W、E、R、T")]
+    [Tooltip("五个轨道")]
     public List<GearTrack> gearTracks = new List<GearTrack>();
 
     [Header("操作模式")]
@@ -99,17 +99,36 @@ public class GearTrackController : MonoBehaviour
     /// <summary>
     /// 初始化默认的QWERT五个轨道
     /// </summary>
+    [Header("轨道侧")]
+    [Tooltip("false=左侧(1-5)，true=右侧(6-10，其中10用0键)")]
+    public bool isRightSide = false;
+
     private void InitializeDefaultTracks()
     {
-        gearTracks = new List<GearTrack>
+        if (!isRightSide)
         {
-            new GearTrack { trackName = "轨道Q", keyCode = KeyCode.Q },
-            new GearTrack { trackName = "轨道W", keyCode = KeyCode.W },
-            new GearTrack { trackName = "轨道E", keyCode = KeyCode.E },
-            new GearTrack { trackName = "轨道R", keyCode = KeyCode.R },
-            new GearTrack { trackName = "轨道T", keyCode = KeyCode.T }
+            gearTracks = new List<GearTrack>
+        {
+            new GearTrack { trackName = "轨道1", keyCode = KeyCode.Alpha1 },
+            new GearTrack { trackName = "轨道2", keyCode = KeyCode.Alpha2 },
+            new GearTrack { trackName = "轨道3", keyCode = KeyCode.Alpha3 },
+            new GearTrack { trackName = "轨道4", keyCode = KeyCode.Alpha4 },
+            new GearTrack { trackName = "轨道5", keyCode = KeyCode.Alpha5 }
         };
+        }
+        else
+        {
+            gearTracks = new List<GearTrack>
+        {
+            new GearTrack { trackName = "轨道6",  keyCode = KeyCode.Alpha6 },
+            new GearTrack { trackName = "轨道7",  keyCode = KeyCode.Alpha7 },
+            new GearTrack { trackName = "轨道8",  keyCode = KeyCode.Alpha8 },
+            new GearTrack { trackName = "轨道9",  keyCode = KeyCode.Alpha9 },
+            new GearTrack { trackName = "轨道10", keyCode = KeyCode.Alpha0 }
+        };
+        }
     }
+
 
     /// <summary>
     /// 处理按键按下（按住/松开模式）

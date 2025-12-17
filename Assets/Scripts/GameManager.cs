@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -32,6 +33,10 @@ public class GameManager : MonoBehaviour
 
     [Header("UI：鼠标进度条（0~1）")]
     public Slider mouseProgressSlider;
+    
+    [Header("UI：倒计时显示")]
+    [Tooltip("倒计时文本（TextMeshProUGUI）")]
+    public TextMeshProUGUI timerText;
 
     [Header("UI：胜利/失败面板")]
     [Tooltip("胜利面板（GameObject）")]
@@ -39,10 +44,20 @@ public class GameManager : MonoBehaviour
     
     [Tooltip("失败面板（GameObject）")]
     public GameObject failPanel;
+    
+    [Tooltip("超时面板（GameObject）")]
+    public GameObject timeoutPanel;
 
     [Header("回合结果设置")]
     [Tooltip("显示胜利/失败面板的时间（秒）")]
     public float resultPanelDisplayTime = 3f;
+    
+    [Header("倒计时设置")]
+    [Tooltip("每轮倒计时时间（秒）")]
+    public float roundTimeLimit = 30f;
+    
+    [Tooltip("超时面板显示时间（秒）")]
+    public float timeoutPanelDisplayTime = 3f;
 
     public enum GameState
     {
@@ -76,6 +91,10 @@ public class GameManager : MonoBehaviour
     private bool isHandlingNextRound = false;
     private float moveAccumulated = 0f;
     private Vector3 lastMousePos;
+    
+    // 倒计时系统
+    private float currentRoundTime = 0f;
+    private bool isTimeoutTriggered = false;
 
     private void Start()
     {
@@ -87,6 +106,15 @@ public class GameManager : MonoBehaviour
     {
         HandleGearOutOfBox();
         UpdateKeyStates();
+        
+        // 更新倒计时（只在游戏进行中时）
+        if (!isHandlingNextRound && !isTimeoutTriggered && 
+            currentState != GameState.WinState && 
+            currentState != GameState.FailState && 
+            currentState != GameState.Transition)
+        {
+            UpdateRoundTimer();
+        }
 
         switch (currentState)
         {
@@ -139,6 +167,13 @@ public class GameManager : MonoBehaviour
         moveAccumulated = 0f;
         lastMousePos = Input.mousePosition;
         UpdateProgressUI(0f, false);
+
+        // 重置倒计时
+        currentRoundTime = roundTimeLimit;
+        isTimeoutTriggered = false;
+        
+        // 更新倒计时显示
+        UpdateTimerDisplay();
 
         // 隐藏所有结果面板
         HideResultPanels();
@@ -397,6 +432,121 @@ public class GameManager : MonoBehaviour
         {
             failPanel.SetActive(false);
         }
+        if (timeoutPanel != null)
+        {
+            timeoutPanel.SetActive(false);
+        }
+    }
+    
+    /// <summary>
+    /// 更新回合倒计时
+    /// </summary>
+    private void UpdateRoundTimer()
+    {
+        currentRoundTime -= Time.deltaTime;
+        
+        // 更新倒计时显示
+        UpdateTimerDisplay();
+        
+        if (currentRoundTime <= 0f)
+        {
+            currentRoundTime = 0f;
+            UpdateTimerDisplay(); // 确保显示为0
+            // 如果还没有触发检测逻辑（即不在WinState或FailState），则触发超时
+            if (currentState != GameState.WinState && currentState != GameState.FailState)
+            {
+                OnRoundTimeout();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 更新倒计时文本显示
+    /// </summary>
+    private void UpdateTimerDisplay()
+    {
+        if (timerText == null) return;
+        
+        // 将秒数转换为整数（向上取整，显示剩余秒数）
+        int seconds = Mathf.CeilToInt(currentRoundTime);
+        
+        // 确保不小于0
+        seconds = Mathf.Max(0, seconds);
+        
+        // 更新文本显示（格式：30、29、28...）
+        timerText.text = seconds.ToString();
+        
+        // 可选：当时间少于10秒时改变颜色为红色
+        if (seconds <= 10)
+        {
+            timerText.color = Color.red;
+        }
+        else
+        {
+            timerText.color = Color.white;
+        }
+    }
+    
+    /// <summary>
+    /// 回合超时处理
+    /// </summary>
+    private void OnRoundTimeout()
+    {
+        if (isTimeoutTriggered) return;
+        
+        isTimeoutTriggered = true;
+        Debug.Log("[Round] 回合超时！");
+        
+        // 更新倒计时显示为0
+        UpdateTimerDisplay();
+        
+        // 显示超时面板
+        ShowTimeoutPanel();
+        
+        // 启动超时面板协程
+        StartCoroutine(TimeoutPanelRoutine());
+    }
+    
+    /// <summary>
+    /// 显示超时面板
+    /// </summary>
+    private void ShowTimeoutPanel()
+    {
+        if (timeoutPanel != null)
+        {
+            timeoutPanel.SetActive(true);
+        }
+        // 隐藏其他面板
+        if (winPanel != null)
+        {
+            winPanel.SetActive(false);
+        }
+        if (failPanel != null)
+        {
+            failPanel.SetActive(false);
+        }
+        currentState = GameState.Transition;
+    }
+    
+    /// <summary>
+    /// 处理超时面板显示后的逻辑
+    /// </summary>
+    private IEnumerator TimeoutPanelRoutine()
+    {
+        isHandlingNextRound = true;
+        
+        // 显示超时面板3秒
+        yield return new WaitForSeconds(timeoutPanelDisplayTime);
+        
+        // 隐藏超时面板
+        if (timeoutPanel != null)
+        {
+            timeoutPanel.SetActive(false);
+        }
+        
+        // 立即刷新新的订单
+        StartNewRound();
+        isHandlingNextRound = false;
     }
 
     /// <summary>
@@ -406,6 +556,15 @@ public class GameManager : MonoBehaviour
     {
         isHandlingNextRound = true;
         currentState = isWin ? GameState.WinState : GameState.FailState;
+        
+        // 停止倒计时（已经完成回合）
+        isTimeoutTriggered = true;
+        
+        // 更新倒计时显示（保持当前值，不再更新）
+        if (timerText != null)
+        {
+            timerText.color = Color.white; // 重置颜色
+        }
 
         // 显示面板3秒
         yield return new WaitForSeconds(resultPanelDisplayTime);

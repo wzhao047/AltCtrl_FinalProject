@@ -47,17 +47,24 @@ public class GameManager : MonoBehaviour
     
     [Tooltip("超时面板（GameObject）")]
     public GameObject timeoutPanel;
+    
+    [Header("UI：计数面板")]
+    [Tooltip("计数面板（GameObject）")]
+    public GameObject countNumberPanel;
+    
+    [Tooltip("计数面板上的文本（TextMeshProUGUI）")]
+    public TextMeshProUGUI countNumberText;
 
     [Header("回合结果设置")]
     [Tooltip("显示胜利/失败面板的时间（秒）")]
     public float resultPanelDisplayTime = 3f;
     
     [Header("倒计时设置")]
-    [Tooltip("每轮倒计时时间（秒）")]
-    public float roundTimeLimit = 30f;
+    [Tooltip("全局倒计时时间（秒）- 所有订单共享一个计时器")]
+    public float globalTimeLimit = 30f;
     
-    [Tooltip("超时面板显示时间（秒）")]
-    public float timeoutPanelDisplayTime = 3f;
+    [Tooltip("计数面板显示时间（秒）")]
+    public float countPanelDisplayTime = 5f;
 
     public enum GameState
     {
@@ -92,13 +99,19 @@ public class GameManager : MonoBehaviour
     private float moveAccumulated = 0f;
     private Vector3 lastMousePos;
     
-    // 倒计时系统
-    private float currentRoundTime = 0f;
-    private bool isTimeoutTriggered = false;
+    // 倒计时系统（全局计时器）
+    private float currentGlobalTime = 0f;
+    private bool isGamePaused = false;
+    
+    // 成功订单计数
+    private int successfulOrderCount = 0;
 
     private void Start()
     {
         InitializeKeyStates();
+        // 初始化全局计时器
+        currentGlobalTime = globalTimeLimit;
+        successfulOrderCount = 0;
         StartNewRound();
     }
 
@@ -107,13 +120,13 @@ public class GameManager : MonoBehaviour
         HandleGearOutOfBox();
         UpdateKeyStates();
         
-        // 更新倒计时（只在游戏进行中时）
-        if (!isHandlingNextRound && !isTimeoutTriggered && 
+        // 更新全局倒计时（只在游戏进行中且未暂停时）
+        if (!isHandlingNextRound && !isGamePaused && 
             currentState != GameState.WinState && 
             currentState != GameState.FailState && 
             currentState != GameState.Transition)
         {
-            UpdateRoundTimer();
+            UpdateGlobalTimer();
         }
 
         switch (currentState)
@@ -168,9 +181,7 @@ public class GameManager : MonoBehaviour
         lastMousePos = Input.mousePosition;
         UpdateProgressUI(0f, false);
 
-        // 重置倒计时
-        currentRoundTime = roundTimeLimit;
-        isTimeoutTriggered = false;
+        // 注意：不再重置计时器，使用全局计时器
         
         // 更新倒计时显示
         UpdateTimerDisplay();
@@ -371,7 +382,11 @@ public class GameManager : MonoBehaviour
 
         if (isCorrect)
         {
-            // 胜利：显示胜利面板
+            // 胜利：增加成功计数
+            successfulOrderCount++;
+            Debug.Log($"[Game] 成功订单计数: {successfulOrderCount}");
+            
+            // 显示胜利面板
             ShowWinPanel();
             onRoundWin?.Invoke();
             StartCoroutine(ResultPanelRoutine(true));
@@ -436,26 +451,30 @@ public class GameManager : MonoBehaviour
         {
             timeoutPanel.SetActive(false);
         }
+        if (countNumberPanel != null)
+        {
+            countNumberPanel.SetActive(false);
+        }
     }
     
     /// <summary>
-    /// 更新回合倒计时
+    /// 更新全局倒计时
     /// </summary>
-    private void UpdateRoundTimer()
+    private void UpdateGlobalTimer()
     {
-        currentRoundTime -= Time.deltaTime;
+        currentGlobalTime -= Time.deltaTime;
         
         // 更新倒计时显示
         UpdateTimerDisplay();
         
-        if (currentRoundTime <= 0f)
+        if (currentGlobalTime <= 0f)
         {
-            currentRoundTime = 0f;
+            currentGlobalTime = 0f;
             UpdateTimerDisplay(); // 确保显示为0
-            // 如果还没有触发检测逻辑（即不在WinState或FailState），则触发超时
+            // 如果还没有触发检测逻辑（即不在WinState或FailState），则触发游戏结束
             if (currentState != GameState.WinState && currentState != GameState.FailState)
             {
-                OnRoundTimeout();
+                OnGameTimeEnd();
             }
         }
     }
@@ -468,7 +487,7 @@ public class GameManager : MonoBehaviour
         if (timerText == null) return;
         
         // 将秒数转换为整数（向上取整，显示剩余秒数）
-        int seconds = Mathf.CeilToInt(currentRoundTime);
+        int seconds = Mathf.CeilToInt(currentGlobalTime);
         
         // 确保不小于0
         seconds = Mathf.Max(0, seconds);
@@ -488,34 +507,44 @@ public class GameManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 回合超时处理
+    /// 游戏时间结束处理
     /// </summary>
-    private void OnRoundTimeout()
+    private void OnGameTimeEnd()
     {
-        if (isTimeoutTriggered) return;
+        if (isGamePaused) return;
         
-        isTimeoutTriggered = true;
-        Debug.Log("[Round] 回合超时！");
+        isGamePaused = true;
+        Debug.Log("[Game] 游戏时间结束！");
         
         // 更新倒计时显示为0
         UpdateTimerDisplay();
         
-        // 显示超时面板
-        ShowTimeoutPanel();
+        // 显示计数面板
+        ShowCountNumberPanel();
         
-        // 启动超时面板协程
-        StartCoroutine(TimeoutPanelRoutine());
+        // 启动计数面板协程
+        StartCoroutine(CountPanelRoutine());
     }
     
     /// <summary>
-    /// 显示超时面板
+    /// 显示计数面板
     /// </summary>
-    private void ShowTimeoutPanel()
+    private void ShowCountNumberPanel()
     {
-        if (timeoutPanel != null)
+        // 暂停游戏
+        Time.timeScale = 0f;
+        
+        if (countNumberPanel != null)
         {
-            timeoutPanel.SetActive(true);
+            countNumberPanel.SetActive(true);
         }
+        
+        // 更新计数文本
+        if (countNumberText != null)
+        {
+            countNumberText.text = successfulOrderCount.ToString();
+        }
+        
         // 隐藏其他面板
         if (winPanel != null)
         {
@@ -525,26 +554,47 @@ public class GameManager : MonoBehaviour
         {
             failPanel.SetActive(false);
         }
-        currentState = GameState.Transition;
-    }
-    
-    /// <summary>
-    /// 处理超时面板显示后的逻辑
-    /// </summary>
-    private IEnumerator TimeoutPanelRoutine()
-    {
-        isHandlingNextRound = true;
-        
-        // 显示超时面板3秒
-        yield return new WaitForSeconds(timeoutPanelDisplayTime);
-        
-        // 隐藏超时面板
         if (timeoutPanel != null)
         {
             timeoutPanel.SetActive(false);
         }
         
-        // 立即刷新新的订单
+        currentState = GameState.Transition;
+    }
+    
+    /// <summary>
+    /// 处理计数面板显示后的逻辑
+    /// </summary>
+    private IEnumerator CountPanelRoutine()
+    {
+        isHandlingNextRound = true;
+        
+        // 使用真实时间等待（因为Time.timeScale = 0）
+        float elapsed = 0f;
+        while (elapsed < countPanelDisplayTime)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        
+        // 隐藏计数面板
+        if (countNumberPanel != null)
+        {
+            countNumberPanel.SetActive(false);
+        }
+        
+        // 恢复游戏时间
+        Time.timeScale = 1f;
+        
+        // 重置成功计数
+        successfulOrderCount = 0;
+        Debug.Log("[Game] 成功计数已清零，重新开始游戏");
+        
+        // 重置全局计时器
+        currentGlobalTime = globalTimeLimit;
+        isGamePaused = false;
+        
+        // 重新开始游戏
         StartNewRound();
         isHandlingNextRound = false;
     }
@@ -557,8 +607,7 @@ public class GameManager : MonoBehaviour
         isHandlingNextRound = true;
         currentState = isWin ? GameState.WinState : GameState.FailState;
         
-        // 停止倒计时（已经完成回合）
-        isTimeoutTriggered = true;
+        // 注意：不再停止倒计时，全局计时器继续运行
         
         // 更新倒计时显示（保持当前值，不再更新）
         if (timerText != null)
